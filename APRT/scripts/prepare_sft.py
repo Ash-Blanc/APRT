@@ -142,7 +142,7 @@ def main():
             conv = conv_templates['Llama2_chat']
     llama2_chat, llama3_chat, vicuna = load_chat_llms()
     assert data_args.tokenizer_dir in ["llama2", "llama3", "vicuna"]
-    if data_args.tokenizer_dir == "llama2";
+    if data_args.tokenizer_dir == "llama2":
         data_args.tokenizer_dir = llama2_chat
     elif data_args.tokenizer_dir == "llama3":
         data_args.tokenizer_dir = llama3_chat
