@@ -89,7 +89,6 @@ export CUDA_VISIBLE_DEVICES=${i}
 python3 scripts/infer_vllm.py \
 --input ${base_dir}/record/epoch-${last_epoch}/prompt_database.${i}.rewrite.rm_duplicate.rm_safety.attack_output \
 --output ${base_dir}/record/epoch-${last_epoch}/prompt_database.${i}.rewrite.rm_duplicate.rm_safety.attack_output_response \
---checkpoint checkpoints/targetLLM/epoch-${last_epoch}/huggingface_model_llama/ \
 --max_tokens 300 \
 --model_role target_stage1 \
 --infer_freq 1 \
