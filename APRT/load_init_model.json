@@ -1,0 +1,6 @@
+{
+"llama2_chat": "xxx/Llama-2-7b-chat-hf/",
+"llama3_chat": "xxx/Meta-Llama-3-8B-Instruct/",
+"vicuna": "xxx/vicuna-7b",
+"llama3_guard": "xxx/Llama-Guard-3-8B/"
+}
