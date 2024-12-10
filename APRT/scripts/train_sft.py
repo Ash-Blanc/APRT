@@ -85,16 +85,6 @@ def get_dataloader():
     train_dataset = get_dataset()
     log_dist(f"loading datasets: {data_args.data_path} \ndata size: {len(train_dataset)}, tokens: {len(train_dataset) * data_args.max_length / 1e9}B")
     sampler = DistributedSampler(train_dataset, shuffle=True, seed=train_args.seed)
-    llama2, llama3, vicuna = load_chat_llms()
-
-    assert model_args.model_path in ["llama2", "llama3", "vicuna"]
-    if model_args.model_path == "llama2":
-        model_args.model_path = llama2
-    elif model_args.model_path == "llama3":
-        model_args.model_path = llama3
-    else:
-        model_args.model_path = vicuna
-
     tokenizer = AutoTokenizer.from_pretrained(model_args.model_path, use_fast=False)
     if not tokenizer.pad_token_id:
         tokenizer.pad_token_id = 0
