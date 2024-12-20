@@ -12,6 +12,38 @@ Ensuring the safety of large language models (LLMs) is paramount, yet identifyin
 
 - (**2024/7/4**) Our paper is on arXiv! Check it out [here](https://arxiv.org/abs/2407.03876)!
 - (**2024/11/30**) Our paper is accepted by COLING-2025!
-- (**2024/12/18**) We have released a quick implementation of APRT, including seed data and code!
+- (**2024/12/18**) We have released a quick implementation of APRT, including both seed data and code!
 
 ## Quick Start
+- **Get code**
+```shell 
+git clone https://github.com/tjunlp-lab/APRT.git
+```
+
+- **Download checkpoints to ./**
+ 
+[Meta-Llama-3-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct)
+
+[Llama-Guard-3-8B](https://huggingface.co/meta-llama/Llama-Guard-3-8B)
+
+[UltraRM-13b](https://huggingface.co/openbmb/UltraRM-13b)
+- **Train initial checkpoints**
+```shell
+# Please set load_init_model.json
+sh init_intention_hiding.sh # train initial Intention Hiding LLM
+sh init_intention_expanding.sh #  train initial Intention Expanding LLM
+```
+
+- **Initialize Experiments**
+```shell
+sh init_exp.sh
+```
+
+- **Train APRT**
+```
+sh auto_train.sh
+```
+## Contact
+If you have any questions about our work, please contact us via the following email:
+
+Bojian Jiang: jiangbojian@tju.edu.cn
