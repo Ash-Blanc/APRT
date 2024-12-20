@@ -9,6 +9,7 @@ from datasets import load_from_disk, concatenate_datasets
 import torch
 from torch.utils.data import DataLoader, DistributedSampler
 import transformers
+import json
 
 def load_chat_llms(path = "./load_init_model.json"):
     with open(path, "r") as file:

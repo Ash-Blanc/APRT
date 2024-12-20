@@ -3,7 +3,8 @@ set -ex
 mkdir checkpoints record
 
 cp -r env/DeepSpeedExamples-master .
-# manually downlaod https://huggingface.co/openbmb/UltraRM-13b 
+# Please manually download https://huggingface.co/openbmb/UltraRM-13b 
+mdkir -p DeepSpeedExamples-master/applications/DeepSpeed-Chat/openbmb/UltraRM-13b
 cp -r UltraRM-13b DeepSpeedExamples-master/applications/DeepSpeed-Chat/openbmb/UltraRM-13b/UltraRM-13b
 
 mkdir record/epoch-0/sft/red/step1 -p

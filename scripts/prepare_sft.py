@@ -7,6 +7,7 @@ from typing import Optional
 import datasets
 from transformers import HfArgumentParser, AutoTokenizer
 from conversations import conv_templates
+import json
 
 
 def load_chat_llms(path = "./load_init_model.json"):
