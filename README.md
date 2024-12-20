@@ -57,10 +57,13 @@ Bojian Jiang: jiangbojian@tju.edu.cn
 If you find this work useful in your research, please leave a star and cite our paper:
 
 ```bibtex
-@article{jiang2024automated,
-  title={Automated Progressive Red Teaming},
-  author={Jiang, Bojian and Jing, Yi and Shen, Tianhao and Wu, Tong and Yang, Qing and Xiong, Deyi},
-  journal={arXiv preprint arXiv:2407.03876},
-  year={2024}
+@misc{jiang2024automatedprogressiveredteaming,
+      title={Automated Progressive Red Teaming}, 
+      author={Bojian Jiang and Yi Jing and Tianhao Shen and Tong Wu and Qing Yang and Deyi Xiong},
+      year={2024},
+      eprint={2407.03876},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR},
+      url={https://arxiv.org/abs/2407.03876}, 
 }
 ```
