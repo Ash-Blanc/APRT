@@ -1,6 +1,5 @@
 #!/bin/bash
-set -x
-set -e
+set -ex
 base_dir=`pwd`
 
 model_path=llama3
