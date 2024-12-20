@@ -112,7 +112,7 @@ then
     cd ${base_dir}
     echo "Train red!!!"
     sh primary_steps/run_sft_llama3_red.sh ${now_epoch} ${base_dir}
-    cp -r ../env/init_checkpoint/intention_hiding_llm_template/huggingface_model_llama checkpoints/redLLM/epoch-${now_epoch}/
+    cp -r ./env/init_checkpoint/intention_hiding_llm_template/huggingface_model_llama checkpoints/redLLM/epoch-${now_epoch}/
     python3 checkpoints/redLLM/epoch-${now_epoch}/zero_to_fp32.py \
     checkpoints/redLLM/epoch-${now_epoch} \
     checkpoints/redLLM/epoch-${now_epoch}/huggingface_model_llama/pytorch_model.bin
