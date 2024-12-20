@@ -47,3 +47,16 @@ sh auto_train.sh
 If you have any questions about our work, please contact us via the following email:
 
 Bojian Jiang: jiangbojian@tju.edu.cn
+
+## Citation
+
+If you find this work useful in your research, please leave a star and cite our paper:
+
+```bibtex
+@article{jiang2024automated,
+  title={Automated Progressive Red Teaming},
+  author={Jiang, Bojian and Jing, Yi and Shen, Tianhao and Wu, Tong and Yang, Qing and Xiong, Deyi},
+  journal={arXiv preprint arXiv:2407.03876},
+  year={2024}
+}
+```
