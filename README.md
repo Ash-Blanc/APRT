@@ -24,13 +24,9 @@ Ensuring the safety of large language models (LLMs) is paramount, yet identifyin
 git clone https://github.com/tjunlp-lab/APRT.git
 ```
 
-- **Download checkpoints to ./**
- 
-[Meta-Llama-3-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct)
+- **Download checkpoints**
 
-[Llama-Guard-3-8B](https://huggingface.co/meta-llama/Llama-Guard-3-8B)
-
-[UltraRM-13b](https://huggingface.co/openbmb/UltraRM-13b)
+[Meta-Llama-3-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct) [Llama-Guard-3-8B](https://huggingface.co/meta-llama/Llama-Guard-3-8B) [UltraRM-13b](https://huggingface.co/openbmb/UltraRM-13b)
 - **Train initial checkpoints**
 ```shell
 # Please set load_init_model.json
