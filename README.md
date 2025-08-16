@@ -69,10 +69,19 @@ sh primary_steps/multi_attack_chat_response.sh $(pwd) 1 600 8 0.7 0.9 llama3 "" 
 export GOOGLE_API_KEY=...
 sh primary_steps/multi_attack.sh $(pwd) 1 300 8 0.7 0.9 llama3 "" api gemini gemini-1.5-pro
 sh primary_steps/multi_attack_chat_response.sh $(pwd) 1 600 8 0.7 0.9 llama3 "" api gemini gemini-1.5-pro
+
+# Pre-attack (optional) using API attacker/target
+# last_epoch is typically 0 for the first round
+sh primary_steps/pre_multi_attack.sh $(pwd) 0 llama3 "" "" api hf meta-llama/Meta-Llama-3-8B-Instruct
+
+# Evaluation with API attacker/target
+sh primary_steps/multi_evaluate.sh $(pwd) 1 300 30 0.7 0.9 llama3 "" api hf meta-llama/Meta-Llama-3-8B-Instruct
+sh primary_steps/multi_evaluate_chat_response.sh $(pwd) 1 800 30 0.7 0.9 llama3 "" api hf meta-llama/Meta-Llama-3-8B-Instruct
 ```
 
 - Required flags additions: `[provider local|api] [api_provider hf|gemini] [api_model_id]`.
 - For evaluation, analogous flags exist in `primary_steps/multi_evaluate*.sh`.
+- If using Gemini, install the client: `pip install google-generativeai`.
 
 ## Contact
 If you have any questions about our work, please contact us via the following email:
