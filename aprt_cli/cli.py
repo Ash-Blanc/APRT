@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -6,7 +7,7 @@ from typing import Optional
 
 import typer
 
-app = typer.Typer(help="APRT CLI")
+app = typer.Typer(help="APRT CLI - Automated Progressive Red Teaming")
 
 ROOT = Path(__file__).resolve().parents[1]
 PY = sys.executable
@@ -16,6 +17,15 @@ def run(cmd: list[str]):
     proc = subprocess.run(cmd, cwd=str(ROOT))
     if proc.returncode != 0:
         raise typer.Exit(proc.returncode)
+
+
+def load_default_models(config_path: Path = ROOT / "load_init_model.json") -> dict:
+    if not config_path.exists():
+        return {}
+    try:
+        return json.loads(config_path.read_text())
+    except Exception:
+        return {}
 
 
 @app.command()
@@ -28,13 +38,16 @@ def init():
 def preattack(
     base_dir: Path = typer.Option(Path.cwd(), help="Base directory"),
     last_epoch: int = typer.Option(0, help="Use epoch-<last_epoch> data"),
-    target_backbone: str = typer.Option("llama3", help="llama2|llama3|vicuna"),
-    attacker_checkpoint: Optional[str] = typer.Option(None, help="Attacker HF checkpoint path or None"),
-    target_checkpoint: Optional[str] = typer.Option(None, help="Target HF checkpoint path or None"),
+    target_backbone: str = typer.Option("auto", help="llama2|llama3|vicuna|auto"),
+    attacker_checkpoint: Optional[str] = typer.Option(None, help="Local attacker checkpoint; omit for API"),
+    target_checkpoint: Optional[str] = typer.Option(None, help="Local target checkpoint; omit for API"),
     provider: str = typer.Option("local", help="local|api"),
     api_provider: Optional[str] = typer.Option(None, help="hf|gemini if provider=api"),
     api_model_id: Optional[str] = typer.Option(None, help="Remote model id if provider=api"),
 ):
+    # Default backbone
+    if target_backbone == "auto":
+        target_backbone = "llama3"
     cmd = [
         "bash", "primary_steps/pre_multi_attack.sh",
         str(base_dir), str(last_epoch), target_backbone,
@@ -64,12 +77,14 @@ def attack(
     infer_freq: int = typer.Option(8),
     temperature: float = typer.Option(0.7),
     top_p: float = typer.Option(0.9),
-    backbone: str = typer.Option("llama3"),
-    attacker_checkpoint: Optional[str] = typer.Option(None),
+    backbone: str = typer.Option("auto", help="llama2|llama3|vicuna|auto"),
+    attacker_checkpoint: Optional[str] = typer.Option(None, help="Local attacker checkpoint; omit for API"),
     provider: str = typer.Option("local", help="local|api"),
     api_provider: Optional[str] = typer.Option(None, help="hf|gemini"),
     api_model_id: Optional[str] = typer.Option(None),
 ):
+    if backbone == "auto":
+        backbone = "llama3"
     cmd = [
         "bash", "primary_steps/multi_attack.sh",
         str(base_dir), str(epoch), str(max_tokens), str(infer_freq), str(temperature), str(top_p), backbone,
@@ -94,12 +109,14 @@ def respond(
     infer_freq: int = typer.Option(8),
     temperature: float = typer.Option(0.7),
     top_p: float = typer.Option(0.9),
-    backbone: str = typer.Option("llama3"),
-    target_checkpoint: Optional[str] = typer.Option(None),
+    backbone: str = typer.Option("auto", help="llama2|llama3|vicuna|auto"),
+    target_checkpoint: Optional[str] = typer.Option(None, help="Local target checkpoint; omit for API"),
     provider: str = typer.Option("local", help="local|api"),
     api_provider: Optional[str] = typer.Option(None, help="hf|gemini"),
     api_model_id: Optional[str] = typer.Option(None),
 ):
+    if backbone == "auto":
+        backbone = "llama3"
     cmd = [
         "bash", "primary_steps/multi_attack_chat_response.sh",
         str(base_dir), str(epoch), str(max_tokens), str(infer_freq), str(temperature), str(top_p), backbone,
@@ -150,13 +167,15 @@ def evaluate(
     infer_freq: int = typer.Option(30),
     temperature: float = typer.Option(0.7),
     top_p: float = typer.Option(0.9),
-    backbone: str = typer.Option("llama3"),
+    backbone: str = typer.Option("auto", help="llama2|llama3|vicuna|auto"),
     attacker_checkpoint: Optional[str] = typer.Option(None),
     target_checkpoint: Optional[str] = typer.Option(None),
     provider: str = typer.Option("local", help="local|api"),
     api_provider: Optional[str] = typer.Option(None, help="hf|gemini"),
     api_model_id: Optional[str] = typer.Option(None),
 ):
+    if backbone == "auto":
+        backbone = "llama3"
     # attacker generation
     cmd1 = [
         "bash", "primary_steps/multi_evaluate.sh",
@@ -199,7 +218,7 @@ def pipeline(
     base_dir: Path = typer.Option(Path.cwd()),
     now_epoch: int = typer.Option(1),
     last_epoch: Optional[int] = typer.Option(None, help="Defaults to now_epoch-1"),
-    backbone: str = typer.Option("llama3"),
+    backbone: str = typer.Option("auto", help="llama2|llama3|vicuna|auto"),
     attacker_checkpoint: Optional[str] = typer.Option(None),
     target_checkpoint: Optional[str] = typer.Option(None),
     provider: str = typer.Option("local", help="local|api"),
@@ -210,8 +229,9 @@ def pipeline(
     """Finetuning-free end-to-end pipeline for one round."""
     if last_epoch is None:
         last_epoch = now_epoch - 1
+    if backbone == "auto":
+        backbone = "llama3"
 
-    # Pre-attack
     if not skip_preattack:
         preattack(
             base_dir=base_dir,
@@ -224,7 +244,6 @@ def pipeline(
             api_model_id=api_model_id,
         )
 
-    # Attack generation
     attack(
         base_dir=base_dir,
         epoch=last_epoch,
@@ -234,7 +253,6 @@ def pipeline(
         api_model_id=api_model_id,
     )
 
-    # Target responses
     respond(
         base_dir=base_dir,
         epoch=last_epoch,
@@ -245,7 +263,6 @@ def pipeline(
         api_model_id=api_model_id,
     )
 
-    # Score and select
     score(epoch=last_epoch, target_stage="pre_attack_target_stage1", base_dir=base_dir, model_role="target_pre-attack")
     select(now_epoch=now_epoch)
 

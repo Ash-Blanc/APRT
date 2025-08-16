@@ -18,7 +18,9 @@ def load_chat_llms(path = "./load_init_model.json"):
 
 
 def createLLM(backbone, checkpoint, temperature=0.7, max_tokens=1024, top_p=0.9, random_seed=True, seed=0):
-    assert backbone in ["llama2", "llama3", "vicuna"]
+    assert backbone in ["llama2", "llama3", "vicuna", "auto"]
+    if backbone == "auto":
+        backbone = "llama3"
     if backbone == "llama2":
         tokenizer = AutoTokenizer.from_pretrained(checkpoint)
         llm = LLM(checkpoint, trust_remote_code=True, gpu_memory_utilization=0.9, tensor_parallel_size=1, seed=int(random.random() * 100000)) if random_seed else LLM(checkpoint, trust_remote_code=True, gpu_memory_utilization=0.9, tensor_parallel_size=1, seed=seed)
@@ -223,7 +225,7 @@ if __name__ == "__main__":
     parser.add_argument("--temperature", type=float, default=0.7, help="temperature")
     parser.add_argument("--max_tokens", type=int, default=1024, help="decode length")
     parser.add_argument("--top_p", type=float, default=0.9, help="top_p")
-    parser.add_argument("--backbone", type=str, default="llama2", help="model backbone, e.g. llama2, llama3...")
+    parser.add_argument("--backbone", type=str, default="llama2", help="model backbone, e.g. llama2, llama3, vicuna, or 'auto'")
     parser.add_argument("--infer_freq", type=int, default=1, help="infer freq")
     parser.add_argument("--model_role", type=str, default="red", help="model role: red, target, safety_rw_model")
     parser.add_argument("--input", type=str, required=True, help="input file")
@@ -246,7 +248,9 @@ if __name__ == "__main__":
 
 
     llama2_chat_path, llama3_chat_path, vicuna_path = load_chat_llms()
-    assert backbone in ["llama2", "llama3", "vicuna"]
+    assert backbone in ["llama2", "llama3", "vicuna", "auto"]
+    if backbone == "auto":
+        backbone = "llama3"
     # If target role and explicit target checkpoint provided, override
     if model_role.startswith("target") and args.target_checkpoint is not None:
         checkpoint = args.target_checkpoint

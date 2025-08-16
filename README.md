@@ -31,67 +31,34 @@ uv pip install -e .
 ```
 
 3) Prepare models and data
-- Set `load_init_model.json` to point to your local checkpoints for Llama-3, Llama-Guard-3, UltraRM.
-- Optionally, to avoid local checkpoints, set API keys for hosted models (see API section below).
-
-4) Initialize experiment scaffolding
+- Open `load_init_model.json` and set paths for your local models (Llama-3 Instruct, Llama-Guard-3, UltraRM-13b). If you prefer APIs, you can skip local paths and use the API flags below.
+- Initialize experiment scaffolding:
 ```bash
 aprt init
 ```
 
-5) Run a finetuning-free pipeline on epoch 1 (using local models by default)
+4) Run a finetuning-free pipeline
+- Local checkpoints:
 ```bash
-aprt pipeline --now-epoch 1 --backbone llama3 --provider local
+aprt pipeline --now-epoch 1 --backbone auto --provider local --skip-preattack
+aprt evaluate --now-epoch 1 --backbone auto --provider local
 ```
-
-6) Evaluate on AdvBench
-```bash
-aprt evaluate --now-epoch 1 --backbone llama3 --provider local
-```
-
-Tips:
-- For API usage, export credentials and add flags like `--provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct`.
-- You can run individual steps: `aprt preattack`, `aprt attack`, `aprt respond`, `aprt score`, `aprt select`.
-
-## Finetuning-free Quickstart
-
-The CLI supports a minimal finetuning-free loop that skips the pre-attack expansion:
-
-Local checkpoints:
-```bash
-# ensure load_init_model.json points to your local models
-aprt init
-aprt pipeline --now-epoch 1 --backbone llama3 --provider local --skip-preattack
-aprt evaluate --now-epoch 1 --backbone llama3 --provider local
-```
-
-Hosted APIs (no checkpoints):
+- Hosted APIs (no checkpoints):
 ```bash
 export HUGGINGFACE_API_TOKEN=hf_...
-aprt init
 aprt pipeline --now-epoch 1 --provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct --skip-preattack
 aprt evaluate --now-epoch 1 --provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct
 ```
 
-Notes:
-- `--skip-preattack` omits the pre-attack expansion to run a quicker loop.
-- You can still use `aprt preattack` for stronger attacks when time/resources allow.
+Tips:
+- `--backbone auto` defaults to `llama3` and works for both local and API flows.
+- Use `aprt preattack` (without `--skip-preattack`) for stronger attack candidate expansion when resources allow.
+- Commands accept optional `--attacker-checkpoint` and `--target-checkpoint` to override models per step.
+- For Gemini APIs, set `GOOGLE_API_KEY` and pass `--api-provider gemini --api-model-id gemini-1.5-pro`.
 
 ## Finetuning-free APRT (Progressive Red Teaming without training)
 
 You can run APRT in a finetuning-free mode to try any attacker model against any target model. Provide absolute checkpoints for the attacker and target (or rely on defaults in `load_init_model.json`).
-
-```bash
-# epoch N relies on data from epoch N-1 (after running init_exp.sh)
-# Usage: sh aprt_llama3.sh <now_epoch> [attacker_checkpoint] [target_checkpoint]
-
-# Example (attacker = a jailbreaker model; target = Meta-Llama-3-8B-Instruct)
-sh aprt_llama3.sh 1 /path/to/attacker/ckpt /path/to/target/ckpt
-```
-
-Notes:
-- The attacker/target checkpoints can be any vLLM-loadable HF directory. The target backbone (llama2/llama3/vicuna) is still configurable in scripts.
-- The pipeline will automatically: generate attacks, get target responses, score safety (Llama-Guard-3), score helpfulness (UltraRM), select strong attacks, and evaluate, without any SFT training step.
 
 ### Use hosted APIs instead of local checkpoints
 
@@ -100,26 +67,18 @@ You can call remote LLMs via API without loading checkpoints. Set provider flags
 ```bash
 # Hugging Face Inference API (set token and model id)
 export HUGGINGFACE_API_TOKEN=hf_...
-sh primary_steps/multi_attack.sh $(pwd) 1 300 8 0.7 0.9 llama3 "" api hf meta-llama/Meta-Llama-3-8B-Instruct
-sh primary_steps/multi_attack_chat_response.sh $(pwd) 1 600 8 0.7 0.9 llama3 "" api hf meta-llama/Meta-Llama-3-8B-Instruct
+aprt attack --provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct
+aprt respond --provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct
 
 # Google Gemini API (set key and model id)
 export GOOGLE_API_KEY=...
-sh primary_steps/multi_attack.sh $(pwd) 1 300 8 0.7 0.9 llama3 "" api gemini gemini-1.5-pro
-sh primary_steps/multi_attack_chat_response.sh $(pwd) 1 600 8 0.7 0.9 llama3 "" api gemini gemini-1.5-pro
-
-# Pre-attack (optional) using API attacker/target
-# last_epoch is typically 0 for the first round
-sh primary_steps/pre_multi_attack.sh $(pwd) 0 llama3 "" "" api hf meta-llama/Meta-Llama-3-8B-Instruct
-
-# Evaluation with API attacker/target
-sh primary_steps/multi_evaluate.sh $(pwd) 1 300 30 0.7 0.9 llama3 "" api hf meta-llama/Meta-Llama-3-8B-Instruct
-sh primary_steps/multi_evaluate_chat_response.sh $(pwd) 1 800 30 0.7 0.9 llama3 "" api hf meta-llama/Meta-Llama-3-8B-Instruct
+aprt attack --provider api --api-provider gemini --api-model-id gemini-1.5-pro
+aprt respond --provider api --api-provider gemini --api-model-id gemini-1.5-pro
 ```
 
 - Required flags additions: `[provider local|api] [api_provider hf|gemini] [api_model_id]`.
-- For evaluation, analogous flags exist in `primary_steps/multi_evaluate*.sh`.
-- If using Gemini, install the client: `pip install google-generativeai`.
+- For evaluation, use the same provider flags with `aprt evaluate`.
+- If using Gemini, install the client: `uv pip install google-generativeai`.
 
 ## APRT CLI (uv project)
 
