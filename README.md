@@ -53,6 +53,30 @@ Tips:
 - For API usage, export credentials and add flags like `--provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct`.
 - You can run individual steps: `aprt preattack`, `aprt attack`, `aprt respond`, `aprt score`, `aprt select`.
 
+## Finetuning-free Quickstart
+
+The CLI supports a minimal finetuning-free loop that skips the pre-attack expansion:
+
+Local checkpoints:
+```bash
+# ensure load_init_model.json points to your local models
+aprt init
+aprt pipeline --now-epoch 1 --backbone llama3 --provider local --skip-preattack
+aprt evaluate --now-epoch 1 --backbone llama3 --provider local
+```
+
+Hosted APIs (no checkpoints):
+```bash
+export HUGGINGFACE_API_TOKEN=hf_...
+aprt init
+aprt pipeline --now-epoch 1 --provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct --skip-preattack
+aprt evaluate --now-epoch 1 --provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct
+```
+
+Notes:
+- `--skip-preattack` omits the pre-attack expansion to run a quicker loop.
+- You can still use `aprt preattack` for stronger attacks when time/resources allow.
+
 ## Finetuning-free APRT (Progressive Red Teaming without training)
 
 You can run APRT in a finetuning-free mode to try any attacker model against any target model. Provide absolute checkpoints for the attacker and target (or rely on defaults in `load_init_model.json`).

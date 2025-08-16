@@ -205,22 +205,24 @@ def pipeline(
     provider: str = typer.Option("local", help="local|api"),
     api_provider: Optional[str] = typer.Option(None, help="hf|gemini"),
     api_model_id: Optional[str] = typer.Option(None),
+    skip_preattack: bool = typer.Option(False, help="Skip pre-attack data expansion step"),
 ):
     """Finetuning-free end-to-end pipeline for one round."""
     if last_epoch is None:
         last_epoch = now_epoch - 1
 
     # Pre-attack
-    preattack(
-        base_dir=base_dir,
-        last_epoch=last_epoch,
-        target_backbone=backbone,
-        attacker_checkpoint=attacker_checkpoint,
-        target_checkpoint=target_checkpoint,
-        provider=provider,
-        api_provider=api_provider,
-        api_model_id=api_model_id,
-    )
+    if not skip_preattack:
+        preattack(
+            base_dir=base_dir,
+            last_epoch=last_epoch,
+            target_backbone=backbone,
+            attacker_checkpoint=attacker_checkpoint,
+            target_checkpoint=target_checkpoint,
+            provider=provider,
+            api_provider=api_provider,
+            api_model_id=api_model_id,
+        )
 
     # Attack generation
     attack(
