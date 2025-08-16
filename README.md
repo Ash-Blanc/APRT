@@ -83,6 +83,41 @@ sh primary_steps/multi_evaluate_chat_response.sh $(pwd) 1 800 30 0.7 0.9 llama3 
 - For evaluation, analogous flags exist in `primary_steps/multi_evaluate*.sh`.
 - If using Gemini, install the client: `pip install google-generativeai`.
 
+## APRT CLI (uv project)
+
+We provide a Typer-based CLI and a uv project for reproducibility.
+
+Setup:
+```bash
+uv init  # if not already
+uv pip install -e .
+```
+
+Commands:
+```bash
+# Pre-attack (data generation + scoring)
+aprt preattack --base-dir $(pwd) --last-epoch 0 --target-backbone llama3 \
+  --provider local
+
+# Attack generation
+aprt attack --base-dir $(pwd) --epoch 1 --max-tokens 300 --infer-freq 8 \
+  --temperature 0.7 --top-p 0.9 --backbone llama3 --provider local
+
+# Target responses
+aprt respond --base-dir $(pwd) --epoch 1 --max-tokens 600 --infer-freq 8 \
+  --temperature 0.7 --top-p 0.9 --backbone llama3 --provider local
+
+# Evaluation (ASR/helpfulness/AER)
+aprt evaluate --base-dir $(pwd) --now-epoch 1 --attacker-max-tokens 300 \
+  --responder-max-tokens 800 --infer-freq 30 --temperature 0.7 --top-p 0.9 \
+  --backbone llama3 --provider local
+
+# Using APIs
+export HUGGINGFACE_API_TOKEN=hf_...
+aprt attack --provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct
+aprt respond --provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct
+```
+
 ## Contact
 If you have any questions about our work, please contact us via the following email:
 
