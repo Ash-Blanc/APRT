@@ -8,9 +8,12 @@ temperature=$5
 top_p=$6
 backbone=$7
 attacker_ckpt=${8:-}
+provider=${9:-local}
+api_provider=${10:-}
+api_model_id=${11:-}
 
 if [ "$#" -lt 7 ]; then
-echo "sh multi_attack.sh base_dir now_epoch max_tokens infer_freq temperature top_p backbone [attacker_checkpoint]"
+echo "sh multi_attack.sh base_dir now_epoch max_tokens infer_freq temperature top_p backbone [attacker_checkpoint] [provider local|api] [api_provider hf|gemini] [api_model_id]"
 exit;
 fi
 
@@ -19,6 +22,13 @@ if [ -n "${attacker_ckpt}" ]; then
   ckpt_arg="--checkpoint ${attacker_ckpt}"
 else
   ckpt_arg="--checkpoint ${base_dir}/checkpoints/redLLM/epoch-${now_epoch}/huggingface_model_llama/"
+fi
+
+# Provider args
+env_args="--provider ${provider}"
+if [ "${provider}" = "api" ]; then
+  [ -n "${api_provider}" ] && env_args="${env_args} --api_provider ${api_provider}"
+  [ -n "${api_model_id}" ] && env_args="${env_args} --api_model_id ${api_model_id}"
 fi
 
 for i in 0 1 2 3 4 5 6 7
@@ -35,7 +45,7 @@ ${ckpt_arg} \
 --infer_freq ${infer_freq} \
 --temperature ${temperature} \
 --top_p ${top_p} \
---backbone ${backbone}
+--backbone ${backbone} ${env_args}
 }&
 done
 wait

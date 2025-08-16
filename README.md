@@ -55,6 +55,25 @@ Notes:
 - The attacker/target checkpoints can be any vLLM-loadable HF directory. The target backbone (llama2/llama3/vicuna) is still configurable in scripts.
 - The pipeline will automatically: generate attacks, get target responses, score safety (Llama-Guard-3), score helpfulness (UltraRM), select strong attacks, and evaluate, without any SFT training step.
 
+### Use hosted APIs instead of local checkpoints
+
+You can call remote LLMs via API without loading checkpoints. Set provider flags and env vars:
+
+```bash
+# Hugging Face Inference API (set token and model id)
+export HUGGINGFACE_API_TOKEN=hf_...
+sh primary_steps/multi_attack.sh $(pwd) 1 300 8 0.7 0.9 llama3 "" api hf meta-llama/Meta-Llama-3-8B-Instruct
+sh primary_steps/multi_attack_chat_response.sh $(pwd) 1 600 8 0.7 0.9 llama3 "" api hf meta-llama/Meta-Llama-3-8B-Instruct
+
+# Google Gemini API (set key and model id)
+export GOOGLE_API_KEY=...
+sh primary_steps/multi_attack.sh $(pwd) 1 300 8 0.7 0.9 llama3 "" api gemini gemini-1.5-pro
+sh primary_steps/multi_attack_chat_response.sh $(pwd) 1 600 8 0.7 0.9 llama3 "" api gemini gemini-1.5-pro
+```
+
+- Required flags additions: `[provider local|api] [api_provider hf|gemini] [api_model_id]`.
+- For evaluation, analogous flags exist in `primary_steps/multi_evaluate*.sh`.
+
 ## Contact
 If you have any questions about our work, please contact us via the following email:
 
