@@ -39,10 +39,22 @@ sh init_intention_expanding.sh #  train initial Intention Expanding LLM
 sh init_exp.sh
 ```
 
-- **Train APRT**
+## Finetuning-free APRT (Progressive Red Teaming without training)
+
+You can run APRT in a finetuning-free mode to try any attacker model against any target model. Provide absolute checkpoints for the attacker and target (or rely on defaults in `load_init_model.json`).
+
+```bash
+# epoch N relies on data from epoch N-1 (after running init_exp.sh)
+# Usage: sh aprt_llama3.sh <now_epoch> [attacker_checkpoint] [target_checkpoint]
+
+# Example (attacker = a jailbreaker model; target = Meta-Llama-3-8B-Instruct)
+sh aprt_llama3.sh 1 /path/to/attacker/ckpt /path/to/target/ckpt
 ```
-sh auto_train.sh
-```
+
+Notes:
+- The attacker/target checkpoints can be any vLLM-loadable HF directory. The target backbone (llama2/llama3/vicuna) is still configurable in scripts.
+- The pipeline will automatically: generate attacks, get target responses, score safety (Llama-Guard-3), score helpfulness (UltraRM), select strong attacks, and evaluate, without any SFT training step.
+
 ## Contact
 If you have any questions about our work, please contact us via the following email:
 
