@@ -7,9 +7,10 @@ infer_freq=$4
 temperature=$5
 top_p=$6
 backbone=$7
+target_ckpt=${8:-}
 
-if [ "$#" -ne 7 ]; then
-    echo "sh multi_attack.sh base_dir epoch max_tokens infer_freq temperature top_p backbone"
+if [ "$#" -lt 7 ]; then
+    echo "sh multi_attack.sh base_dir now_epoch max_tokens infer_freq temperature top_p backbone [target_checkpoint]"
     exit;
 fi
 
@@ -26,7 +27,7 @@ python3 scripts/infer_vllm.py \
 --infer_freq ${infer_freq} \
 --temperature ${temperature} \
 --top_p ${top_p} \
---backbone ${backbone}
+--backbone ${backbone} ${target_ckpt:+--target_checkpoint ${target_ckpt}}
 }&
 done
 wait

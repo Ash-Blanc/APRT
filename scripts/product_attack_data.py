@@ -26,8 +26,18 @@ def cal_bleu(target, inference):
 
 tokenizer = AutoTokenizer.from_pretrained(checkpoint)
 llm = LLM(checkpoint, trust_remote_code=True, gpu_memory_utilization=0.9, tensor_parallel_size=1, seed=int(random.random() * 100000)) 
-stop_token_ids = [tokenizer.eos_token_id, tokenizer.convert_tokens_to_ids("<|eot_id|>")]
-sampling_params = SamplingParams(temperature=temperature, top_p=top_p, max_tokens=max_tokens, stop_token_ids=stop_token_ids)
+# Build stop_token_ids robustly for various chat models
+stop_token_ids = []
+if hasattr(tokenizer, 'eos_token_id') and tokenizer.eos_token_id is not None:
+    stop_token_ids.append(tokenizer.eos_token_id)
+try:
+    eot_id = tokenizer.convert_tokens_to_ids("<|eot_id|>")
+    # Some tokenizers return 0 or -1 for unknown tokens; keep only valid, distinct ids
+    if isinstance(eot_id, int) and eot_id > 0 and eot_id not in stop_token_ids:
+        stop_token_ids.append(eot_id)
+except Exception:
+    pass
+sampling_params = SamplingParams(temperature=temperature, top_p=top_p, max_tokens=max_tokens, stop_token_ids=stop_token_ids if len(stop_token_ids) > 0 else None)
 
 template = "You are a helpful assistant. I will provide a sample, please rewrite it with other samples with similar meanings.\nInput:{}\nOutput:"
 

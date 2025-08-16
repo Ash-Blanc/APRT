@@ -3,13 +3,17 @@ set -ex
 base_dir=$1
 last_epoch=$2
 target_backbone=$3
+attacker_ckpt=${4:-}
+target_ckpt=${5:-}
 
 
 # fix checkpoint to search
 checkpoint=${base_dir}/checkpoints/stage1_redLLM/epoch-0/huggingface_model_llama/
+# prefer attacker checkpoint for product stage if provided
+prod_ckpt=${attacker_ckpt:-$checkpoint}
 
-if [ "$#" -ne 3 ]; then
-echo "sh pre_multi_attack.sh base_dir last_epoch target_backbone"
+if [ "$#" -lt 3 ]; then
+echo "sh pre_multi_attack.sh base_dir last_epoch target_backbone [attacker_checkpoint] [target_checkpoint]"
 exit;
 fi
 
@@ -24,7 +28,7 @@ do
 {
 export CUDA_VISIBLE_DEVICES=${i}
 python3 -u scripts/product_attack_data.py \
-${checkpoint} \
+${prod_ckpt} \
 ${base_dir}/record/epoch-0/prompt_database \
 ${base_dir}/record/epoch-0/history_prompt \
 ${base_dir}/record/epoch-${last_epoch}/prompt_database.${i}.rewrite \
@@ -75,7 +79,7 @@ python3 scripts/infer_vllm.py \
 --infer_freq 1 \
 --temperature 1.0 \
 --top_p 0.9 \
---backbone llama3
+--backbone llama3 ${attacker_ckpt:+--checkpoint ${attacker_ckpt}}
 }&
 done
 wait
@@ -94,7 +98,7 @@ python3 scripts/infer_vllm.py \
 --infer_freq 1 \
 --temperature 0.7 \
 --top_p 0.9 \
---backbone ${target_backbone}
+--backbone ${target_backbone} ${target_ckpt:+--target_checkpoint ${target_ckpt}}
 }&
 done
 wait

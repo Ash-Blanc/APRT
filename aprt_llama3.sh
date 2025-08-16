@@ -7,7 +7,10 @@ now_epoch=$1
 last_epoch=$((${now_epoch}-1))
 attack_freq=8
 target_backbone=llama3
-process='pre-attack-select-train-evaluate'
+process='pre-attack-select-evaluate-noft'
+# Optional explicit checkpoints for no-finetune attacker and target
+attacker_ckpt=${2:-}
+target_ckpt=${3:-}
 
 if [[ ${now_epoch} == 0  ]]
 then
@@ -19,7 +22,7 @@ fi
 if [[ ${process} =~ 'pre' ]]
 then
     cd ${base_dir}
-    bash primary_steps/pre_multi_attack.sh ${base_dir} ${last_epoch} ${target_backbone}
+    bash primary_steps/pre_multi_attack.sh ${base_dir} ${last_epoch} ${target_backbone} ${attacker_ckpt} ${target_ckpt}
     if [ $? -eq 0 ]; then
         echo "Red LLM pre-attack finished!!!"
     else
@@ -34,7 +37,7 @@ then
     cd ${base_dir}
 
     echo "Red LLM rewrite!!!"
-    sh primary_steps/multi_attack.sh ${base_dir} ${last_epoch} 300 ${attack_freq} 0.7 0.9 llama3
+    sh primary_steps/multi_attack.sh ${base_dir} ${last_epoch} 300 ${attack_freq} 0.7 0.9 llama3 ${attacker_ckpt}
     if [ $? -eq 0 ]; then
         echo "Red LLM rewrite finished!!!"
     else
@@ -43,7 +46,7 @@ then
     fi
     
     echo "Target LLM response stage1"
-    sh primary_steps/multi_attack_chat_response.sh ${base_dir} ${last_epoch} 600 ${attack_freq} 0.7 0.9 ${target_backbone}
+    sh primary_steps/multi_attack_chat_response.sh ${base_dir} ${last_epoch} 600 ${attack_freq} 0.7 0.9 ${target_backbone} ${target_ckpt}
     if [ $? -eq 0 ]; then
         echo "Target LLM response stage1 finished!!!"
     else
@@ -88,40 +91,10 @@ then
     python3 -u scripts/active_learning_selection_red.py \
     record/epoch-${last_epoch}/attack.json.attack_output_response.guard.helpful.asr_sort \
     record/epoch-${last_epoch}/attack.json.attack_output_response.guard.helpful.asr_sort.red_next 0.2 0.58 100
-    
-    ########## prepare training data for next epoch ############
-    if [ ! -d "record/epoch-${now_epoch}/sft/red" ];then
-        mkdir -p record/epoch-${now_epoch}/sft/red
-    fi
-    cd record/epoch-${now_epoch}/sft/red
-    if [ ! -d "step1" ];then
-        mkdir step1 step2 step3
-    fi
-    cd ${base_dir}
-    cat record/epoch-${last_epoch}/attack.json.attack_output_response.guard.helpful.asr_sort.red_next \
-        record/epoch-${last_epoch}/sft/red/step1/red.trainset > record/epoch-${now_epoch}/sft/red/step1/red.trainset
-    python3 scripts/step2_build_arrow-for-safe.py \
-    record/epoch-${now_epoch}/sft/red/step1/red.trainset record/epoch-${now_epoch}/sft/red/step2
-    sh scripts/run_prepare_llama3.sh record/epoch-${now_epoch}/sft/red/step2/red record/epoch-${now_epoch}/sft/red/step3
-
-fi
-
-############ TRAIN ####################
-if [[ ${process} =~ 'train' ]]
-then
-    cd ${base_dir}
-    echo "Train red!!!"
-    sh primary_steps/run_sft_llama3_red.sh ${now_epoch} ${base_dir}
-    cp -r ./env/init_checkpoint/intention_hiding_llm_template/huggingface_model_llama checkpoints/redLLM/epoch-${now_epoch}/
-    python3 checkpoints/redLLM/epoch-${now_epoch}/zero_to_fp32.py \
-    checkpoints/redLLM/epoch-${now_epoch} \
-    checkpoints/redLLM/epoch-${now_epoch}/huggingface_model_llama/pytorch_model.bin
-    rm -rf checkpoints/redLLM/epoch-${now_epoch}/epoch-*
-
 fi
 
 ############# EVALUATE ############
-if [[ ${process} =~ 'evaluate' ]]
+if [[ ${process} =~ 'evaluate-noft' ]]
 then
     cd ${base_dir}
     # evaluate advbench: stage1

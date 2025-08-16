@@ -10,7 +10,7 @@ import argparse
 def load_chat_llms(path = "./load_init_model.json"):
     with open(path, "r") as file:
         data = json.load(file)
-    return data["llama2_chat"], data["llama3_chat"], data["vicuna"]
+    return data.get("llama2_chat"), data.get("llama3_chat"), data.get("vicuna")
 
 
 def createLLM(backbone, checkpoint, temperature=0.7, max_tokens=1024, top_p=0.9, random_seed=True, seed=0):
@@ -94,7 +94,7 @@ def infer_jsonline(model_role, tokenizer, sampling_params, llm, infer_freq, json
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Vllm infer parser")
-    parser.add_argument("--checkpoint", type=str, default="chat", help="Checkpoint path")
+    parser.add_argument("--checkpoint", type=str, default="chat", help="Checkpoint path or 'chat' to use defaults")
     parser.add_argument("--temperature", type=float, default=0.7, help="temperature")
     parser.add_argument("--max_tokens", type=int, default=1024, help="decode length")
     parser.add_argument("--top_p", type=float, default=0.9, help="top_p")
@@ -103,6 +103,7 @@ if __name__ == "__main__":
     parser.add_argument("--model_role", type=str, default="red", help="model role: red, target, safety_rw_model")
     parser.add_argument("--input", type=str, required=True, help="input file")
     parser.add_argument("--output", type=str, required=True, help="input file")
+    parser.add_argument("--target_checkpoint", type=str, default=None, help="Optional explicit target model checkpoint when model_role is target_*")
     args = parser.parse_args()
 
     backbone = args.backbone
@@ -118,7 +119,10 @@ if __name__ == "__main__":
 
     llama2_chat_path, llama3_chat_path, vicuna_path = load_chat_llms()
     assert backbone in ["llama2", "llama3", "vicuna"]
-    if model_role != "red" and checkpoint == "chat":
+    # If target role and explicit target checkpoint provided, override
+    if model_role.startswith("target") and args.target_checkpoint is not None:
+        checkpoint = args.target_checkpoint
+    elif model_role != "red" and checkpoint == "chat":
         if backbone == "llama2":
             checkpoint = llama2_chat_path
         elif backbone == "llama3":
