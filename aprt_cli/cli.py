@@ -19,6 +19,12 @@ def run(cmd: list[str]):
 
 
 @app.command()
+def init():
+    """Initialize experiment directories and seed data."""
+    run(["bash", "init_exp.sh"])
+
+
+@app.command()
 def preattack(
     base_dir: Path = typer.Option(Path.cwd(), help="Base directory"),
     last_epoch: int = typer.Option(0, help="Use epoch-<last_epoch> data"),
@@ -111,6 +117,31 @@ def respond(
 
 
 @app.command()
+def score(
+    epoch: int = typer.Option(1, help="Epoch id to score"),
+    target_stage: str = typer.Option("pre_attack_target_stage1", help="target_stage1|pre_attack_target_stage1"),
+    base_dir: Path = typer.Option(Path.cwd(), help="Base directory for helpfulness"),
+    model_role: str = typer.Option("target_pre-attack", help="Role tag for helpfulness scorer"),
+):
+    # safety (Llama-Guard)
+    run(["bash", "primary_steps/compute_safety_guard.sh", str(epoch), target_stage])
+    # helpfulness (UltraRM)
+    run(["bash", "primary_steps/compute_helpfulness.sh", str(epoch), str(base_dir), model_role])
+
+
+@app.command()
+def select(
+    now_epoch: int = typer.Option(1, help="Current epoch"),
+):
+    """Select data for next round based on ASR and helpfulness."""
+    record_dir = ROOT / f"record/epoch-{now_epoch-1}"
+    merged = record_dir / "attack.json.attack_output_response.guard.helpful"
+    run(["bash", "-lc", f"cat {record_dir}/attack.json.*.attack_output_response.guard.helpful > {merged}"])
+    run(["python3", "scripts/sort_incremental_red_by_asr.py", str(merged), str(merged)+".asr_sort", "False"])
+    run(["python3", "scripts/active_learning_selection_red.py", str(merged)+".asr_sort", str(merged)+".asr_sort.red_next", "0.2", "0.58", "100"])
+
+
+@app.command()
 def evaluate(
     base_dir: Path = typer.Option(Path.cwd()),
     now_epoch: int = typer.Option(1),
@@ -161,6 +192,60 @@ def evaluate(
     # guard + helpfulness + metrics
     run(["bash", "primary_steps/compute_safety_evaluate.sh", str(now_epoch), "target_stage1"])  # will manage transformer pin itself
     run(["bash", "primary_steps/compute_helpfulness_evaluate.sh", str(now_epoch), str(base_dir), "target_stage1"]) 
+
+
+@app.command()
+def pipeline(
+    base_dir: Path = typer.Option(Path.cwd()),
+    now_epoch: int = typer.Option(1),
+    last_epoch: Optional[int] = typer.Option(None, help="Defaults to now_epoch-1"),
+    backbone: str = typer.Option("llama3"),
+    attacker_checkpoint: Optional[str] = typer.Option(None),
+    target_checkpoint: Optional[str] = typer.Option(None),
+    provider: str = typer.Option("local", help="local|api"),
+    api_provider: Optional[str] = typer.Option(None, help="hf|gemini"),
+    api_model_id: Optional[str] = typer.Option(None),
+):
+    """Finetuning-free end-to-end pipeline for one round."""
+    if last_epoch is None:
+        last_epoch = now_epoch - 1
+
+    # Pre-attack
+    preattack(
+        base_dir=base_dir,
+        last_epoch=last_epoch,
+        target_backbone=backbone,
+        attacker_checkpoint=attacker_checkpoint,
+        target_checkpoint=target_checkpoint,
+        provider=provider,
+        api_provider=api_provider,
+        api_model_id=api_model_id,
+    )
+
+    # Attack generation
+    attack(
+        base_dir=base_dir,
+        epoch=last_epoch,
+        attacker_checkpoint=attacker_checkpoint,
+        provider=provider,
+        api_provider=api_provider,
+        api_model_id=api_model_id,
+    )
+
+    # Target responses
+    respond(
+        base_dir=base_dir,
+        epoch=last_epoch,
+        backbone=backbone,
+        target_checkpoint=target_checkpoint,
+        provider=provider,
+        api_provider=api_provider,
+        api_model_id=api_model_id,
+    )
+
+    # Score and select
+    score(epoch=last_epoch, target_stage="pre_attack_target_stage1", base_dir=base_dir, model_role="target_pre-attack")
+    select(now_epoch=now_epoch)
 
 
 if __name__ == "__main__":

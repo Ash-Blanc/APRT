@@ -18,26 +18,40 @@ Ensuring the safety of large language models (LLMs) is paramount, yet identifyin
 - (**2024/11/30**) Our paper is accepted by COLING-2025!
 - (**2024/12/18**) We have released a quick implementation of APRT, including both seed data and code!
 
-## Quick Start
-- **Get code**
-```shell 
-git clone https://github.com/tjunlp-lab/APRT.git
+## Quickstart (uv + APRT CLI)
+
+1) Clone and move into the repo
+```bash
+git clone https://github.com/tjunlp-lab/APRT.git && cd APRT
 ```
 
-- **Download checkpoints**
-
-[Meta-Llama-3-8B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3-8B-Instruct) [Llama-Guard-3-8B](https://huggingface.co/meta-llama/Llama-Guard-3-8B) [UltraRM-13b](https://huggingface.co/openbmb/UltraRM-13b)
-- **Train initial checkpoints**
-```shell
-# Please set load_init_model.json
-sh init_intention_hiding.sh # train initial Intention Hiding LLM
-sh init_intention_expanding.sh #  train initial Intention Expanding LLM
+2) Install with uv
+```bash
+uv pip install -e .
 ```
 
-- **Initialize Experiments**
-```shell
-sh init_exp.sh
+3) Prepare models and data
+- Set `load_init_model.json` to point to your local checkpoints for Llama-3, Llama-Guard-3, UltraRM.
+- Optionally, to avoid local checkpoints, set API keys for hosted models (see API section below).
+
+4) Initialize experiment scaffolding
+```bash
+aprt init
 ```
+
+5) Run a finetuning-free pipeline on epoch 1 (using local models by default)
+```bash
+aprt pipeline --now-epoch 1 --backbone llama3 --provider local
+```
+
+6) Evaluate on AdvBench
+```bash
+aprt evaluate --now-epoch 1 --backbone llama3 --provider local
+```
+
+Tips:
+- For API usage, export credentials and add flags like `--provider api --api-provider hf --api-model-id meta-llama/Meta-Llama-3-8B-Instruct`.
+- You can run individual steps: `aprt preattack`, `aprt attack`, `aprt respond`, `aprt score`, `aprt select`.
 
 ## Finetuning-free APRT (Progressive Red Teaming without training)
 
