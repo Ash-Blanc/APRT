@@ -5,6 +5,9 @@ last_epoch=$2
 target_backbone=$3
 attacker_ckpt=${4:-}
 target_ckpt=${5:-}
+provider=${6:-local}
+api_provider=${7:-}
+api_model_id=${8:-}
 
 
 # fix checkpoint to search
@@ -13,7 +16,7 @@ checkpoint=${base_dir}/checkpoints/stage1_redLLM/epoch-0/huggingface_model_llama
 prod_ckpt=${attacker_ckpt:-$checkpoint}
 
 if [ "$#" -lt 3 ]; then
-echo "sh pre_multi_attack.sh base_dir last_epoch target_backbone [attacker_checkpoint] [target_checkpoint]"
+echo "sh pre_multi_attack.sh base_dir last_epoch target_backbone [attacker_checkpoint] [target_checkpoint] [provider local|api] [api_provider hf|gemini] [api_model_id]"
 exit;
 fi
 
@@ -66,6 +69,13 @@ wait
 
 #############stage2: red LLM rewrite  ###############
 echo "Pre-attack rewrite"
+# Provider args
+prov_args="--provider ${provider}"
+if [ "${provider}" = "api" ]; then
+  [ -n "${api_provider}" ] && prov_args="${prov_args} --api_provider ${api_provider}"
+  [ -n "${api_model_id}" ] && prov_args="${prov_args} --api_model_id ${api_model_id}"
+fi
+
 for i in 0 1 2 3 4 5 6 7
 do
 {
@@ -79,7 +89,7 @@ python3 scripts/infer_vllm.py \
 --infer_freq 1 \
 --temperature 1.0 \
 --top_p 0.9 \
---backbone llama3 ${attacker_ckpt:+--checkpoint ${attacker_ckpt}}
+--backbone llama3 ${attacker_ckpt:+--checkpoint ${attacker_ckpt}} ${prov_args}
 }&
 done
 wait
@@ -98,7 +108,7 @@ python3 scripts/infer_vllm.py \
 --infer_freq 1 \
 --temperature 0.7 \
 --top_p 0.9 \
---backbone ${target_backbone} ${target_ckpt:+--target_checkpoint ${target_ckpt}}
+--backbone ${target_backbone} ${target_ckpt:+--target_checkpoint ${target_ckpt}} ${prov_args}
 }&
 done
 wait
